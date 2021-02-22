@@ -1,21 +1,28 @@
 from settings import *
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    # если файл не существует, то выходим
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    pygame_image = pygame.image.load(fullname)
-    if colorkey is not None:
-        pygame_image = pygame_image.convert()
-        if colorkey == -1:
-            colorkey = pygame_image.get_at((0, 0))
-        pygame_image.set_colorkey(colorkey)
-    else:
-        pygame_image = pygame_image.convert_alpha()
-    return pygame_image
+# def load_image(name, colorkey=None):
+#     fullname = os.path.join('data', name)
+#     # если файл не существует, то выходим
+#     if not os.path.isfile(fullname):
+#         print(f"Файл с изображением '{fullname}' не найден")
+#         sys.exit()
+#     pygame_image = pygame.image.load(fullname)
+#     if colorkey is not None:
+#         pygame_image = pygame_image.convert()
+#         if colorkey == -1:
+#             colorkey = pygame_image.get_at((0, 0))
+#         pygame_image.set_colorkey(colorkey)
+#     else:
+#         pygame_image = pygame_image.convert_alpha()
+#     return pygame_image
+
+def load_images(path, size):
+    images = []
+    for i in os.listdir(path):
+        img = pygame.transform.scale(pygame.image.load(path + os.sep + i).convert_alpha(), size)
+        images.append(img)
+    return images
 
 
 class Player(sprite.Sprite):
@@ -26,25 +33,35 @@ class Player(sprite.Sprite):
         self.y = 0  # скорость вертикального перемещения
 
         self.onGround = False  # На земле ли я?
-
         self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
         self.startY = y
 
-        self.image = Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
-        self.image.fill(Color(0, 0, 0))
-        self.rect = Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)  # прямоугольный объект
+        self.images_idle = load_images(path='data/Hero_Knight/Idle', size=(144, 144))
+        self.images_right = load_images(path='data/Hero_Knight/Run', size=(144, 144))
+        self.images_left = [pygame.transform.flip(image, True, False) for image in self.images_right]
+
+        self.current_images_group = self.images_idle
+
+        self.cur_frame = 0
+        self.image = self.current_images_group[self.cur_frame]
+        self.rect = self.image.get_rect()
+
+        self.last_update = pygame.time.get_ticks()
 
     def update(self, left, right, up, platforms):
         if up:
             if self.onGround:  # прыгаем, только когда можем оттолкнуться от земли
                 self.y = -JUMP_POWER
         if left:
+            self.current_images_group = self.images_left
             self.x = -MOVE_SPEED  # Лево = x- n
 
         if right:
+            self.current_images_group = self.images_right
             self.x = MOVE_SPEED  # Право = x + n
 
         if not (left or right):  # стоим, когда нет указаний идти
+            self.current_images_group = self.images_idle
             self.x = 0
 
         if not self.onGround:
@@ -56,6 +73,14 @@ class Player(sprite.Sprite):
 
         self.rect.x += self.x  # переносим свои положение на xvel
         self.collide(self.x, 0, platforms)
+
+        now = pygame.time.get_ticks()
+        if now - self.last_update >= FPS:
+            self.last_update = now
+            self.cur_frame += 1
+        if self.cur_frame >= len(self.current_images_group):
+            self.cur_frame = 0
+        self.image = self.current_images_group[self.cur_frame]
 
     def collide(self, x, y, platforms):
         for p in platforms:

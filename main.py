@@ -17,7 +17,7 @@ class Game:
 
         # Создание дисплея, заднего фона и менеджера pygame_gui
 
-        self.screen = pygame.display.set_mode(SIZE)  # screen = pygame.display.set_mode((size), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode(SIZE)  # screen = pygame.display.set_mode((SIZE), pygame.FULLSCREEN)
 
         # background = pygame.transform.scale(pygame.image.load('data/town.png').convert(), SIZE)
 
