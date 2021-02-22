@@ -1,6 +1,23 @@
 from settings import *
 
 
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    # если файл не существует, то выходим
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    pygame_image = pygame.image.load(fullname)
+    if colorkey is not None:
+        pygame_image = pygame_image.convert()
+        if colorkey == -1:
+            colorkey = pygame_image.get_at((0, 0))
+        pygame_image.set_colorkey(colorkey)
+    else:
+        pygame_image = pygame_image.convert_alpha()
+    return pygame_image
+
+
 class Player(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)

@@ -2,65 +2,69 @@ from sprites import *
 from levels import *
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    # если файл не существует, то выходим
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    pygame_image = pygame.image.load(fullname)
-    if colorkey is not None:
-        pygame_image = pygame_image.convert()
-        if colorkey == -1:
-            colorkey = pygame_image.get_at((0, 0))
-        pygame_image.set_colorkey(colorkey)
-    else:
-        pygame_image = pygame_image.convert_alpha()
-    return pygame_image
+class Game:
+    def __init__(self):
+        pygame.init()
 
+        # Размер экрана, а также иконка и название приложения
+        pygame.display.set_caption(CAPTION)
+        icon = pygame.image.load(ICON_IMAGE)
+        pygame.display.set_icon(icon)
 
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
+        self.running = True
+        self.playing = True
+        self.make_jump = self.press_left = self.press_right = False
 
-if __name__ == '__main__':
-    pygame.init()
+        # Создание дисплея, заднего фона и менеджера pygame_gui
 
-    # Размер экрана, а также иконка и название приложения
-    pygame.display.set_caption(CAPTION)
-    icon = pygame.image.load(ICON_IMAGE)
-    pygame.display.set_icon(icon)
+        self.screen = pygame.display.set_mode(SIZE)  # screen = pygame.display.set_mode((size), pygame.FULLSCREEN)
 
-    # Создание дисплея, заднего фона и менеджера pygame_gui
+        # background = pygame.transform.scale(pygame.image.load('data/town.png').convert(), SIZE)
 
-    screen = pygame.display.set_mode(SIZE)  # screen = pygame.display.set_mode((size), pygame.FULLSCREEN)
+        self.background = pygame.Surface(SIZE)  # Заменить на вышестоящую строчку
+        self.background.fill(pygame.Color(WHITE))  # Заменить на вышестоящую строчку
 
-    # background = pygame.transform.scale(pygame.image.load('data/town.png').convert(), SIZE)
+        self.manager = pygame_gui.UIManager(SIZE)
 
-    background = pygame.Surface(SIZE)  # Заменить на вышестоящую строчку
-    background.fill(pygame.Color(WHITE))  # Заменить на вышестоящую строчку
+        self.clock = pygame.time.Clock()
+        self.time_delta = self.clock.tick(FPS) / 1000.0
 
-    manager = pygame_gui.UIManager(SIZE)
+        self.player_x_pos = SCREEN_WIDTH // 3
+        self.player_y_pos = SCREEN_HEIGHT - PLAYER_HEIGHT - 100
 
-    clock = pygame.time.Clock()
+    def new(self):
+        self.hero = Player(self.player_x_pos, self.player_y_pos)  # создаем героя по (x,y) координатам
+        self.all_sprites = pygame.sprite.Group()  # Все объекты
+        self.platforms = []  # то, во что мы будем врезаться или опираться
+        self.all_sprites.add(self.hero)
 
-    player_x_pos = SCREEN_WIDTH // 3
-    player_y_pos = SCREEN_HEIGHT - PLAYER_HEIGHT - 100
+        x = y = 0  # координаты
+        for row in level:  # вся строка
+            for col in row:  # каждый символ
+                if col == "#":
+                    pf = Platform(x, y)
+                    self.all_sprites.add(pf)
+                    self.platforms.append(pf)
+                x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
+            y += PLATFORM_HEIGHT  # то же самое и с высотой
+            x = 0  # на каждой новой строчке начинаем с нуля
 
-    hero = Player(player_x_pos, player_y_pos)  # создаем героя по (x,y) координатам
-    entities = pygame.sprite.Group()  # Все объекты
-    platforms = []  # то, во что мы будем врезаться или опираться
-    entities.add(hero)
+        self.run()
 
-    running = True
-    make_jump = press_left = press_right = False
-    while running:
-        time_delta = clock.tick(FPS) / 1000.0
+    def run(self):
+        while self.playing:
+            self.clock.tick()
+            self.manager.update(self.time_delta)
+            self.events()
+            self.update()
+            self.draw()
+
+    def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 confirmation_dialog = pygame_gui.windows.UIConfirmationDialog(
                     rect=pygame.Rect((250, 200), (300, 200)),
-                    manager=manager,
+                    manager=self.manager,
                     window_title='Подтверждение',
                     action_long_desc='Вы уверены, что хотите выйти?',
                     action_short_name='OK',
@@ -68,44 +72,37 @@ if __name__ == '__main__':
                 )
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
-                    running = False
+                    if self.playing:
+                        self.playing = False
+                    self.running = False
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                make_jump = True
+                self.make_jump = True
             if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                press_left = True
+                self.press_left = True
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                press_right = True
+                self.press_right = True
             if event.type == pygame.KEYUP and event.key == pygame.K_RIGHT:
-                press_right = False
+                self.press_right = False
             if event.type == pygame.KEYUP and event.key == pygame.K_LEFT:
-                press_left = False
+                self.press_left = False
             if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
-                make_jump = False
+                self.make_jump = False
 
-            manager.process_events(event)
+            self.manager.process_events(event)
 
-        manager.update(time_delta)
-        # Отрисовка фона
-        screen.blit(background, (0, 0))
-        #
-        #
-        #
-        x = y = 0  # координаты
-        for row in level:  # вся строка
-            for col in row:  # каждый символ
-                if col == "#":
-                    pf = Platform(x, y)
-                    entities.add(pf)
-                    platforms.append(pf)
-
-                x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
-            y += PLATFORM_HEIGHT  # то же самое и с высотой
-            x = 0  # на каждой новой строчке начинаем с нуля
-        #
-        #
-        #
-        hero.update(press_left, press_right, make_jump, platforms)  # передвижение
-        entities.draw(screen)  # отображение
-        manager.draw_ui(screen)
+    def update(self):
+        self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms)  # передвижение
         pygame.display.update()
-    pygame.quit()
+
+    def draw(self):
+        # Отрисовка фона
+        self.screen.blit(self.background, (0, 0))
+        self.all_sprites.draw(self.screen)  # отображение
+        self.manager.draw_ui(self.screen)
+
+
+game = Game()
+while game.running:
+    game.new()
+pygame.quit()
