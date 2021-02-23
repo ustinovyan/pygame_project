@@ -29,6 +29,13 @@ class Player(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
 
+        self.images_idle_right = load_images(path='data/Hero_Knight/Idle', size=(144, 144))
+        self.images_idle_left = [pygame.transform.flip(image, True, False) for image in self.images_idle_right]
+        self.images_right = load_images(path='data/Hero_Knight/Run', size=(144, 144))
+        self.images_left = [pygame.transform.flip(image, True, False) for image in self.images_right]
+        self.images_jump_right = load_images(path='data/Hero_Knight/Jump', size=(144, 144))
+        self.images_jump_left = [pygame.transform.flip(image, True, False) for image in self.images_jump_right]
+
         self.x = 0  # скорость горизонтального перемещения. 0 - стоять на месте
         self.y = 0  # скорость вертикального перемещения
 
@@ -36,12 +43,11 @@ class Player(sprite.Sprite):
         self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
         self.startY = y
 
-        self.images_idle = load_images(path='data/Hero_Knight/Idle', size=(144, 144))
-        self.images_right = load_images(path='data/Hero_Knight/Run', size=(144, 144))
-        self.images_left = [pygame.transform.flip(image, True, False) for image in self.images_right]
-
-        self.current_images_group = self.images_idle
-
+        try:
+            if self.current_images_group:
+                pass
+        except Exception:
+            self.current_images_group = self.images_idle_right
         self.cur_frame = 0
         self.image = self.current_images_group[self.cur_frame]
         self.rect = self.image.get_rect()
@@ -52,6 +58,10 @@ class Player(sprite.Sprite):
         if up:
             if self.onGround:  # прыгаем, только когда можем оттолкнуться от земли
                 self.y = -JUMP_POWER
+            if self.current_images_group == self.images_idle_right or self.current_images_group == self.images_right:
+                self.current_images_group = self.images_jump_right
+            elif self.current_images_group == self.images_idle_left or self.current_images_group == self.images_left:
+                self.current_images_group = self.images_jump_left
         if left:
             self.current_images_group = self.images_left
             self.x = -MOVE_SPEED  # Лево = x- n
@@ -61,7 +71,11 @@ class Player(sprite.Sprite):
             self.x = MOVE_SPEED  # Право = x + n
 
         if not (left or right):  # стоим, когда нет указаний идти
-            self.current_images_group = self.images_idle
+            if self.onGround:
+                if self.current_images_group == self.images_left or self.current_images_group == self.images_jump_left:
+                    self.current_images_group = self.images_idle_left
+                elif self.current_images_group == self.images_right or self.current_images_group == self.images_jump_right:
+                    self.current_images_group = self.images_idle_right
             self.x = 0
 
         if not self.onGround:

@@ -103,6 +103,7 @@ class Game:
 
 
 game = Game()
+
 while game.running:
     game.new()
 pygame.quit()
