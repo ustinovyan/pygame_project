@@ -2,6 +2,23 @@ from sprites import *
 from levels import *
 
 
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - SCREEN_WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h - SCREEN_HEIGHT + 100)
+
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -63,7 +80,7 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 confirmation_dialog = pygame_gui.windows.UIConfirmationDialog(
-                    rect=pygame.Rect((250, 200), (300, 200)),
+                    rect=pygame.Rect((SCREEN_WIDTH // 3, SCREEN_HEIGHT // 3), (300, 200)),
                     manager=self.manager,
                     window_title='Подтверждение',
                     action_long_desc='Вы уверены, что хотите выйти?',
@@ -93,6 +110,11 @@ class Game:
 
     def update(self):
         self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms)  # передвижение
+        # изменяем ракурс камеры
+        camera.update(self.hero)
+        # обновляем положение всех спрайтов
+        for sprite in self.all_sprites:
+            camera.apply(sprite)
         pygame.display.update()
 
     def draw(self):
@@ -102,8 +124,9 @@ class Game:
         self.manager.draw_ui(self.screen)
 
 
-game = Game()
-
-while game.running:
-    game.new()
-pygame.quit()
+if __name__ == "__main__":
+    game = Game()
+    camera = Camera()
+    while game.running:
+        game.new()
+    pygame.quit()

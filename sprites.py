@@ -58,23 +58,33 @@ class Player(sprite.Sprite):
         if up:
             if self.onGround:  # прыгаем, только когда можем оттолкнуться от земли
                 self.y = -JUMP_POWER
-            if self.current_images_group == self.images_idle_right or self.current_images_group == self.images_right:
+            if self.current_images_group == self.images_idle_right or \
+                    self.current_images_group == self.images_right:
                 self.current_images_group = self.images_jump_right
-            elif self.current_images_group == self.images_idle_left or self.current_images_group == self.images_left:
+            elif self.current_images_group == self.images_idle_left or \
+                    self.current_images_group == self.images_left:
                 self.current_images_group = self.images_jump_left
         if left:
-            self.current_images_group = self.images_left
+            if up:
+                self.current_images_group = self.images_jump_left
+            else:
+                self.current_images_group = self.images_left
             self.x = -MOVE_SPEED  # Лево = x- n
 
         if right:
-            self.current_images_group = self.images_right
+            if up:
+                self.current_images_group = self.images_jump_right
+            else:
+                self.current_images_group = self.images_right
             self.x = MOVE_SPEED  # Право = x + n
 
         if not (left or right):  # стоим, когда нет указаний идти
             if self.onGround:
-                if self.current_images_group == self.images_left or self.current_images_group == self.images_jump_left:
+                if self.current_images_group == self.images_left or \
+                        self.current_images_group == self.images_jump_left:
                     self.current_images_group = self.images_idle_left
-                elif self.current_images_group == self.images_right or self.current_images_group == self.images_jump_right:
+                elif self.current_images_group == self.images_right or \
+                        self.current_images_group == self.images_jump_right:
                     self.current_images_group = self.images_idle_right
             self.x = 0
 
@@ -82,6 +92,7 @@ class Player(sprite.Sprite):
             self.y += GRAVITY
 
         self.onGround = False  # Мы не знаем, когда мы на земле((
+        self.rect.y += self.y
         self.rect.y += self.y
         self.collide(0, self.y, platforms)
 
