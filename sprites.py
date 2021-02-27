@@ -17,7 +17,7 @@ from settings import *
 #         pygame_image = pygame_image.convert_alpha()
 #     return pygame_image
 
-def load_images(path, size):
+def load_images(path, size):  # Загрузка всех картинок из какой-либо папки
     images = []
     for i in os.listdir(path):
         img = pygame.transform.scale(pygame.image.load(path + os.sep + i).convert_alpha(), size)
@@ -25,10 +25,25 @@ def load_images(path, size):
     return images
 
 
+def play_sound(sound, loops=0, maxtime=0, fade_ms=0):
+    if sound_on:
+        sound.play(loops, maxtime, fade_ms)
+
+
+def play_music():
+    if sound_on:
+        songs = []
+        for i in os.listdir("theme_music"):
+            songs.append("theme_music" + os.sep + i)
+            pygame.mixer.music.load(random.choice(songs))
+        pygame.mixer.music.play(-1)
+
+
 class Player(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
 
+        # Загрузка картинок для анимации героя
         self.images_idle_right = load_images(path='data/Hero_Knight/Idle', size=(144, 144))
         self.images_idle_left = [pygame.transform.flip(image, True, False) for image in self.images_idle_right]
         self.images_right = load_images(path='data/Hero_Knight/Run', size=(144, 144))
@@ -42,6 +57,12 @@ class Player(sprite.Sprite):
         self.onGround = False  # На земле ли я?
         self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
         self.startY = y
+
+        self.score = 0
+        self.lives = 3
+        self.hearts = 3
+        self.max_hearts = 3
+        self.invincibility = 0
 
         try:
             if self.current_images_group:
@@ -125,3 +146,37 @@ class Player(sprite.Sprite):
                 if y < 0:  # если движется вверх
                     self.rect.top = p.rect.bottom  # то не движется вверх
                     self.y = 0  # и энергия прыжка пропадает
+
+    def process_coins(self, coins):
+        hit_list = pygame.sprite.spritecollide(self, coins, True)
+
+        for coin in hit_list:
+            play_sound(COIN_SOUND)
+            self.score += coin.value
+
+
+class Coin(sprite.Sprite):
+    def __init__(self, x, y):
+        sprite.Sprite.__init__(self)
+
+        self.value = 1
+
+        self.current_images_group = load_images(path='data/coin', size=(50, 50))
+        self.cur_frame = 0
+        self.image = self.current_images_group[self.cur_frame]
+        self.rect = self.image.get_rect()
+        self.last_update = pygame.time.get_ticks()
+        self.rect.x = x
+        self.rect.y = y - 25
+
+        self.vy = 0
+        self.vx = 0
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update >= FPS:
+            self.last_update = now
+            self.cur_frame += 1
+        if self.cur_frame >= len(self.current_images_group):
+            self.cur_frame = 0
+        self.image = self.current_images_group[self.cur_frame]
