@@ -16,7 +16,7 @@ class Camera:
     # позиционировать камеру на объекте target
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - SCREEN_WIDTH // 2)
-        self.dy = -(target.rect.y + target.rect.h - SCREEN_HEIGHT + 100)
+        self.dy = -(target.rect.y + target.rect.h - SCREEN_HEIGHT + 40)
 
 
 class Game:
@@ -36,10 +36,13 @@ class Game:
 
         self.screen = pygame.display.set_mode(SIZE)  # screen = pygame.display.set_mode((SIZE), pygame.FULLSCREEN)
 
-        # background = pygame.transform.scale(pygame.image.load('data/town.png').convert(), SIZE)
+        self.background = pygame.transform.scale(pygame.image.load('data/background/fon1.jpg').convert(), SIZE)
+        # self.background_images = load_images(path='data/background', size=SIZE)
+        # self.cur_background = 0
+        # self.last_update = pygame.time.get_ticks()
 
-        self.background = pygame.Surface(SIZE)  # Заменить на вышестоящую строчку
-        self.background.fill(pygame.Color(WHITE))  # Заменить на вышестоящую строчку
+        # self.background = pygame.Surface(SIZE)  # Заменить на вышестоящую строчку
+        # self.background.fill(pygame.Color(WHITE))  # Заменить на вышестоящую строчку
 
         self.manager = pygame_gui.UIManager(SIZE)
 
@@ -118,6 +121,13 @@ class Game:
         pygame.display.update()
 
     def draw(self):
+        # now = pygame.time.get_ticks()
+        # if now - self.last_update >= FPS * 20:
+        #     self.last_update = now
+        #     self.cur_background += 1
+        # if self.cur_background >= len(self.background_images):
+        #     self.cur_background = 0
+        # self.image = self.background_images[self.cur_background]
         # Отрисовка фона
         self.screen.blit(self.background, (0, 0))
         self.all_sprites.draw(self.screen)  # отображение
