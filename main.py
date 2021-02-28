@@ -21,7 +21,7 @@ class Camera:
     # позиционировать камеру на объекте target
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - SCREEN_WIDTH // 2)
-        self.dy = -(target.rect.y + target.rect.h - SCREEN_HEIGHT + 100)
+        self.dy = -(target.rect.y + target.rect.h - SCREEN_HEIGHT + 40)
 
 
 class Game:
@@ -61,15 +61,10 @@ class Game:
         self.clock = pygame.time.Clock()
         self.time_delta = self.clock.tick(FPS) / 1000.0
 
-        self.player_x_pos = SCREEN_WIDTH // 3
-        self.player_y_pos = SCREEN_HEIGHT - PLAYER_HEIGHT - 100
-
     def new(self):
-        self.hero = Player(self.player_x_pos, self.player_y_pos)  # создаем героя по (x,y) координатам
         self.all_sprites = pygame.sprite.Group()  # Все объекты
         self.platforms = []  # то, во что мы будем врезаться или опираться
         self.coins = pygame.sprite.Group()  # Монеты
-        self.all_sprites.add(self.hero)
 
         x = y = 0  # координаты
         for row in level:  # вся строка
@@ -82,6 +77,9 @@ class Game:
                     coin = Coin(x, y)
                     self.all_sprites.add(coin)
                     self.coins.add(coin)
+                elif col == "p":
+                    self.hero = Player(x, y)
+                    self.all_sprites.add(self.hero)
                 x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
             y += PLATFORM_HEIGHT  # то же самое и с высотой
             x = 0  # на каждой новой строчке начинаем с нуля

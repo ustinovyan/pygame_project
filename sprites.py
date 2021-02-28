@@ -55,8 +55,6 @@ class Player(sprite.Sprite):
         self.y = 0  # скорость вертикального перемещения
 
         self.onGround = False  # На земле ли я?
-        self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
-        self.startY = y
 
         self.score = 0
         self.lives = 3
@@ -72,6 +70,9 @@ class Player(sprite.Sprite):
         self.cur_frame = 0
         self.image = self.current_images_group[self.cur_frame]
         self.rect = self.image.get_rect()
+
+        self.rect.x = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
+        self.rect.y = y
 
         self.last_update = pygame.time.get_ticks()
 
