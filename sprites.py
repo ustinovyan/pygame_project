@@ -44,11 +44,11 @@ class Player(sprite.Sprite):
         sprite.Sprite.__init__(self)
 
         # Загрузка картинок для анимации героя
-        self.images_idle_right = load_images(path='data/Hero_Knight/Idle', size=(144, 144))
+        self.images_idle_right = load_images(path='data/Hero_Knight/Idle', size=PLAYER_SIZE)
         self.images_idle_left = [pygame.transform.flip(image, True, False) for image in self.images_idle_right]
-        self.images_right = load_images(path='data/Hero_Knight/Run', size=(144, 144))
+        self.images_right = load_images(path='data/Hero_Knight/Run', size=PLAYER_SIZE)
         self.images_left = [pygame.transform.flip(image, True, False) for image in self.images_right]
-        self.images_jump_right = load_images(path='data/Hero_Knight/Jump', size=(144, 144))
+        self.images_jump_right = load_images(path='data/Hero_Knight/Jump', size=PLAYER_SIZE)
         self.images_jump_left = [pygame.transform.flip(image, True, False) for image in self.images_jump_right]
 
         self.x = 0  # скорость горизонтального перемещения. 0 - стоять на месте
@@ -77,8 +77,15 @@ class Player(sprite.Sprite):
 
     def update(self, left, right, up, platforms):
         if up:
-            if self.onGround:  # прыгаем, только когда можем оттолкнуться от земли
-                self.y = -JUMP_POWER
+            self.rect.y += 1
+
+            hit_list = pygame.sprite.spritecollide(self, platforms, False)
+
+            if len(hit_list) > 0:
+                self.y = -1 * JUMP_POWER
+                play_sound(JUMP_SOUND)
+
+            self.rect.y -= 1
             if self.current_images_group == self.images_idle_right or \
                     self.current_images_group == self.images_right:
                 self.current_images_group = self.images_jump_right

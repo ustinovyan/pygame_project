@@ -26,8 +26,7 @@ GAMEOVER_SOUND = pygame.mixer.Sound("sounds/game_over.wav")
 FPS = 120  # Частота обновлений
 
 # Размеры персонажа
-PLAYER_WIDTH = 25
-PLAYER_HEIGHT = 35
+PLAYER_SIZE = PLAYER_WIDTH, PLAYER_HEIGHT = 150, 150
 
 MOVE_SPEED = 1
 JUMP_POWER = 20
