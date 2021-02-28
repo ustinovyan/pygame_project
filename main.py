@@ -65,6 +65,7 @@ class Game:
         self.all_sprites = pygame.sprite.Group()  # Все объекты
         self.platforms = []  # то, во что мы будем врезаться или опираться
         self.coins = pygame.sprite.Group()  # Монеты
+        self.enemies = pygame.sprite.Group()  # Противники
 
         x = y = 0  # координаты
         for row in level:  # вся строка
@@ -79,11 +80,16 @@ class Game:
                     self.coins.add(coin)
                 elif col == "p":
                     self.hero = Player(x, y)
-                    self.all_sprites.add(self.hero)
+                elif col == "e":
+                    enemy = Enemy(x, y)
+                    self.all_sprites.add(enemy)
+                    self.enemies.add(enemy)
+
                 x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
             y += PLATFORM_HEIGHT  # то же самое и с высотой
             x = 0  # на каждой новой строчке начинаем с нуля
 
+        self.all_sprites.add(self.hero)
         self.run()
 
     def run(self):
@@ -170,9 +176,9 @@ class Game:
                 self.press_right = self.press_left = False
 
     def update(self):
-        self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms)  # передвижение
-        self.hero.process_coins(self.coins)
+        self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms, self.enemies, self.coins)
         self.coins.update()
+        self.enemies.update(self.platforms, self.hero)
         # изменяем ракурс камеры
         camera.update(self.hero)
         # обновляем положение всех спрайтов

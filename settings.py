@@ -18,7 +18,7 @@ ICON_IMAGE = "data/logo_image.png"  # Икока игры
 JUMP_SOUND = pygame.mixer.Sound("sounds/jump.wav")
 COIN_SOUND = pygame.mixer.Sound("sounds/pickup_coin.wav")
 POWERUP_SOUND = pygame.mixer.Sound("sounds/powerup.wav")
-HURT_SOUND = pygame.mixer.Sound("sounds/hurt.ogg")
+HURT_SOUND = pygame.mixer.Sound("sounds/WOO.mp3")
 DIE_SOUND = pygame.mixer.Sound("sounds/death.wav")
 LEVELUP_SOUND = pygame.mixer.Sound("sounds/level_up.wav")
 GAMEOVER_SOUND = pygame.mixer.Sound("sounds/game_over.wav")
@@ -29,7 +29,7 @@ FPS = 120  # Частота обновлений
 PLAYER_SIZE = PLAYER_WIDTH, PLAYER_HEIGHT = 150, 150
 
 MOVE_SPEED = 1
-JUMP_POWER = 20
+JUMP_POWER = 30
 GRAVITY = 0.35
 
 # Размер одного экземпляра платформы
@@ -42,3 +42,6 @@ WHITE = (255, 255, 255)
 BLACK = (30, 25, 50)
 
 sound_on = True
+
+COIN_SIZE = COIN_WIDTH, COIN_HEIGHT = 50, 50
+ENEMY_SIZE = ENEMY_WIDTH, ENEMY_HEIGHT = 100, 100
