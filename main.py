@@ -41,7 +41,7 @@ class Game:
 
         self.running = True
         self.playing = True
-        self.make_jump = self.press_left = self.press_right = False
+        self.make_jump = self.press_left = self.press_right = self.make_hit = False
         self.stage = Game.SPLASH
 
         # Создание дисплея, заднего фона и менеджера pygame_gui
@@ -66,6 +66,10 @@ class Game:
         self.platforms = []  # то, во что мы будем врезаться или опираться
         self.coins = pygame.sprite.Group()  # Монеты
         self.enemies = pygame.sprite.Group()  # Противники
+        self.flag = pygame.sprite.Group()  # Флаг(цель уровня)
+        self.spikes = pygame.sprite.Group()  # Шипы
+
+        self.level_completed = False
 
         x = y = 0  # координаты
         for row in level:  # вся строка
@@ -84,6 +88,14 @@ class Game:
                     enemy = Enemy(x, y)
                     self.all_sprites.add(enemy)
                     self.enemies.add(enemy)
+                elif col == "f":
+                    flag = Target(x, y)
+                    self.flag.add(flag)
+                    self.all_sprites.add(flag)
+                elif col == "s":
+                    spikes = DangerPlatform(x, y)
+                    self.all_sprites.add(spikes)
+                    self.spikes.add(spikes)
 
                 x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
             y += PLATFORM_HEIGHT  # то же самое и с высотой
@@ -157,11 +169,17 @@ class Game:
                     self.stage = Game.PLAYING
                     play_music()
 
+                elif event.key == pygame.K_e:
+                    self.make_hit = True
+
                 elif event.key == pygame.K_SPACE:
                     self.make_jump = True
             elif event.type == pygame.KEYUP:
-                if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
+                if event.key == pygame.K_SPACE:
                     self.make_jump = False
+
+                elif event.key == pygame.K_e:
+                    self.make_hit = False
 
             self.manager.process_events(event)
 
@@ -176,15 +194,32 @@ class Game:
                 self.press_right = self.press_left = False
 
     def update(self):
-        self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms, self.enemies, self.coins)
-        self.coins.update()
-        self.enemies.update(self.platforms, self.hero)
-        # изменяем ракурс камеры
-        camera.update(self.hero)
-        # обновляем положение всех спрайтов
-        for sprite in self.all_sprites:
-            camera.apply(sprite)
+        if self.stage == Game.PLAYING or self.stage == Game.SPLASH:
+            self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms, self.enemies,
+                             self.coins, self.flag, self.make_hit, self.spikes)
+            self.coins.update()
+            self.flag.update()
+            self.enemies.update(self.platforms, self.hero, self.stage)
+            # изменяем ракурс камеры
+            camera.update(self.hero)
+            # обновляем положение всех спрайтов
+            for sprite in self.all_sprites:
+                camera.apply(sprite)
         pygame.display.update()
+        if self.hero.level_completed:
+            self.level_completed = True
+
+        if self.level_completed:
+            self.stage = Game.LEVEL_COMPLETED
+            pygame.mixer.music.stop()
+
+        elif self.hero.lives == 0:
+            self.stage = Game.GAME_OVER
+            pygame.mixer.music.stop()
+
+        elif self.hero.hearts == 0:
+            self.new()
+            self.hero.respawn()
 
     def draw(self):
         # now = pygame.time.get_ticks()

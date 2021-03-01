@@ -47,6 +47,14 @@ class Platform(sprite.Sprite):
         self.rect = Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
 
+class DangerPlatform(sprite.Sprite):
+    def __init__(self, x, y):
+        sprite.Sprite.__init__(self)
+        self.image = Surface((PLATFORM_WIDTH, PLATFORM_HEIGHT))
+        self.image = image.load("data/blocks/spikes.png")
+        self.rect = Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+
+
 class Player(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
@@ -58,11 +66,14 @@ class Player(sprite.Sprite):
         self.images_left = [pygame.transform.flip(image, True, False) for image in self.images_right]
         self.images_jump_right = load_images(path='data/Hero_Knight/Jump', size=PLAYER_SIZE)
         self.images_jump_left = [pygame.transform.flip(image, True, False) for image in self.images_jump_right]
+        self.images_attack_right = load_images(path='data/Hero_Knight/Attack1', size=PLAYER_SIZE)
+        self.images_attack_left = [pygame.transform.flip(image, True, False) for image in self.images_attack_right]
 
         self.x = 0  # скорость горизонтального перемещения. 0 - стоять на месте
         self.y = 0  # скорость вертикального перемещения
 
         self.onGround = False  # На земле ли я?
+        self.level_completed = False
 
         self.score = 0
         self.lives = 3
@@ -79,20 +90,43 @@ class Player(sprite.Sprite):
         self.image = self.current_images_group[self.cur_frame]
         self.rect = self.image.get_rect()
 
-        self.rect.x = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
+        self.start_x = x
+        self.start_y = y
+
+        self.rect.x = x
         self.rect.y = y
 
         self.last_update = pygame.time.get_ticks()
 
-    def process_enemies(self, enemies):
-        hit_list = pygame.sprite.spritecollide(self, enemies, False)
+        self.right = True
+        self.attack = False
 
+    def process_spikes(self, spikes):
+        hit_list = pygame.sprite.spritecollide(self, spikes, False)
         if len(hit_list) > 0 and self.invincibility == 0:
-            play_sound(HURT_SOUND)
-            self.hearts -= 1
-            self.invincibility = FPS * 3
+            self.hearts = 0
 
-    def update(self, left, right, up, platforms, enemies, coins):
+    def process_enemies(self, enemies):
+        if self.attack and self.cur_frame >= 2:
+            hit_list = pygame.sprite.spritecollide(self, enemies, True)
+            if len(hit_list) > 0 and self.invincibility == 0:
+                play_sound(DIE_SOUND)
+        elif not self.attack:
+            hit_list = pygame.sprite.spritecollide(self, enemies, False)
+
+            if len(hit_list) > 0 and self.invincibility == 0:
+                play_sound(HURT_SOUND)
+                self.hearts -= 1
+                self.invincibility = FPS * 3
+
+    def process_flag(self, flag):
+        hit_list = pygame.sprite.spritecollide(self, flag, False)
+
+        if len(hit_list) > 0:
+            self.level_completed = True
+            play_sound(LEVELUP_SOUND)
+
+    def update(self, left, right, up, platforms, enemies, coins, flag, hit, spikes):
         if up:
             self.rect.y += 1
 
@@ -103,52 +137,62 @@ class Player(sprite.Sprite):
                 play_sound(JUMP_SOUND)
 
             self.rect.y -= 1
-            if self.current_images_group == self.images_idle_right or \
-                    self.current_images_group == self.images_right:
+            if self.right:
                 self.current_images_group = self.images_jump_right
-            elif self.current_images_group == self.images_idle_left or \
-                    self.current_images_group == self.images_left:
+            else:
                 self.current_images_group = self.images_jump_left
+            self.attack = False
         if left:
             if up:
                 self.current_images_group = self.images_jump_left
             else:
                 self.current_images_group = self.images_left
+            self.right = False
             self.x = -MOVE_SPEED  # Лево = x- n
+            self.attack = False
 
         if right:
             if up:
                 self.current_images_group = self.images_jump_right
             else:
                 self.current_images_group = self.images_right
+            self.right = True
             self.x = MOVE_SPEED  # Право = x + n
+            self.attack = False
 
         if not (left or right):  # стоим, когда нет указаний идти
             if self.onGround:
-                if self.current_images_group == self.images_left or \
-                        self.current_images_group == self.images_jump_left:
+                if not self.right:
                     self.current_images_group = self.images_idle_left
-                elif self.current_images_group == self.images_right or \
-                        self.current_images_group == self.images_jump_right:
+                elif self.right:
                     self.current_images_group = self.images_idle_right
             self.x = 0
+            self.attack = False
 
         if not self.onGround:
             self.y += GRAVITY
 
-        self.onGround = False  # Мы не знаем, когда мы на земле((
+        if hit:
+            if self.right:
+                self.current_images_group = self.images_attack_right
+            else:
+                self.current_images_group = self.images_attack_left
+            self.x = 0
+            self.attack = True
+
+        self.onGround = False  # Мы не знаем, когда мы на земле
         self.rect.y += self.y
         self.rect.y += self.y
         self.collide(0, self.y, platforms)
 
-        self.rect.x += self.x  # переносим свои положение на xvel
+        self.rect.x += self.x  # переносим свои положение
         self.collide(self.x, 0, platforms)
 
         now = pygame.time.get_ticks()
         if now - self.last_update >= FPS:
             self.last_update = now
             self.cur_frame += 1
-        if self.cur_frame >= len(self.current_images_group):
+        if self.cur_frame >= len(self.current_images_group):  # если кадры закончились, начинаем анимацию заново
             self.cur_frame = 0
         self.image = self.current_images_group[self.cur_frame]
 
@@ -156,13 +200,14 @@ class Player(sprite.Sprite):
 
         if self.hearts > 0:
             self.process_coins(coins)
-
+            self.process_flag(flag)
+            self.process_spikes(spikes)
             if self.invincibility > 0:
                 self.invincibility -= 1
         else:
             self.die()
 
-    def collide(self, x, y, platforms):
+    def collide(self, x, y, platforms):  # проверка на соприкосновение с платформой
         for p in platforms:
             if sprite.collide_rect(self, p):  # если есть пересечение платформы с игроком
 
@@ -181,7 +226,7 @@ class Player(sprite.Sprite):
                     self.rect.top = p.rect.bottom  # то не движется вверх
                     self.y = 0  # и энергия прыжка пропадает
 
-    def process_coins(self, coins):
+    def process_coins(self, coins):  # проверка на соприкосновение с монетой
         hit_list = pygame.sprite.spritecollide(self, coins, True)
 
         for coin in hit_list:
@@ -190,18 +235,25 @@ class Player(sprite.Sprite):
 
     def die(self):
         self.lives -= 1
+        print(self.lives)
 
         if self.lives > 0:
             play_sound(DIE_SOUND)
         else:
             play_sound(GAMEOVER_SOUND)
 
+    def respawn(self):
+        self.rect.x = self.start_x
+        self.rect.y = self.start_y
+        self.hearts = self.max_hearts
+        self.invincibility = 0
+
 
 class Coin(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
 
-        self.value = 1
+        self.value = 1  # Кол-во очков score, которое будет давать 1 монетка
 
         self.current_images_group = load_images(path='data/coin', size=COIN_SIZE)
         self.cur_frame = 0
@@ -211,7 +263,7 @@ class Coin(sprite.Sprite):
         self.rect.x = x
         self.rect.y = y - COIN_HEIGHT // 2
 
-    def update(self):
+    def update(self):  # Анимация вращения монетки
         now = pygame.time.get_ticks()
         if now - self.last_update >= FPS:
             self.last_update = now
@@ -221,7 +273,7 @@ class Coin(sprite.Sprite):
         self.image = self.current_images_group[self.cur_frame]
 
 
-class Enemy(pygame.sprite.Sprite):
+class Enemy(pygame.sprite.Sprite):  # Класс врага
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
         images = load_images(path='data/monsters', size=ENEMY_SIZE)
@@ -236,13 +288,13 @@ class Enemy(pygame.sprite.Sprite):
         self.x = self.start_x
         self.y = self.start_y
 
-    def reverse(self):
+    def reverse(self):  # смена направления движения на противоположную
         self.x *= -1
 
-    def move_and_process_blocks(self, blocks):
+    def move_and_process_blocks(self, blocks, game_stage):
         reverse = False
-
-        self.rect.x += self.x
+        if game_stage == 2:
+            self.rect.x += self.x
         hit_list = pygame.sprite.spritecollide(self, blocks, False)
 
         for block in hit_list:
@@ -279,24 +331,24 @@ class Enemy(pygame.sprite.Sprite):
     def is_near(self, hero):
         return abs(self.rect.x - hero.rect.x) < 2 * SCREEN_WIDTH
 
-    def update(self, platforms, hero):
+    def update(self, platforms, hero, game_stage):
         if self.is_near(hero):
-            self.move_and_process_blocks(platforms)
+            self.move_and_process_blocks(platforms, game_stage)
 
 
-class Target(sprite.Sprite):
+class Target(sprite.Sprite):  # цель уровня(флаг)
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
 
-        self.current_images_group = load_images(path='data/coin', size=COIN_SIZE)
+        self.current_images_group = load_images(path='data/flag', size=FLAG_SIZE)
         self.cur_frame = 0
         self.image = self.current_images_group[self.cur_frame]
         self.rect = self.image.get_rect()
         self.last_update = pygame.time.get_ticks()
         self.rect.x = x
-        self.rect.y = y - COIN_HEIGHT // 2
+        self.rect.y = y - FLAG_HEIGHT // 1.5
 
-    def update(self):
+    def update(self):  # Анимация флага
         now = pygame.time.get_ticks()
         if now - self.last_update >= FPS:
             self.last_update = now
