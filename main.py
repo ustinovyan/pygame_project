@@ -31,7 +31,6 @@ class Game:
     PAUSED = 3
     LEVEL_COMPLETED = 4
     GAME_OVER = 5
-    VICTORY = 6
 
     def __init__(self):
         # Размер экрана, а также иконка и название приложения
@@ -145,12 +144,10 @@ class Game:
 
     def display_stats(self, surface):
         hearts_text = FONT_INFO.render("Hearts: " + str(self.hero.hearts), 1, BLUE)
-        lives_text = FONT_INFO.render("Lives: " + str(self.hero.lives), 1, BLUE)
         score_text = FONT_INFO.render("Score: " + str(self.hero.score), 1, BLUE)
 
         surface.blit(score_text, (SCREEN_WIDTH - score_text.get_width() - 32, 32))
         surface.blit(hearts_text, (32, 32))
-        surface.blit(lives_text, (32, 64))
 
     def events(self):
         for event in pygame.event.get():
@@ -179,6 +176,22 @@ class Game:
 
                 elif event.key == pygame.K_SPACE:
                     self.make_jump = True
+
+                elif event.key == pygame.K_ESCAPE:
+                    if self.stage == Game.PLAYING:
+                        self.stage = Game.PAUSED
+                        pygame.mixer.music.pause()
+                    elif self.stage == Game.PAUSED:
+                        self.stage = Game.PLAYING
+                        pygame.mixer.music.unpause()
+
+                elif event.key == pygame.K_r:
+                    if self.stage == Game.GAME_OVER or self.stage == Game.LEVEL_COMPLETED:
+                        self.stage = Game.PLAYING
+                        play_music()
+                        self.new()
+                        self.hero.respawn()
+
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_SPACE:
                     self.make_jump = False
@@ -218,13 +231,9 @@ class Game:
             self.stage = Game.LEVEL_COMPLETED
             pygame.mixer.music.stop()
 
-        elif self.hero.lives == 0:
+        elif self.hero.hearts == 0:
             self.stage = Game.GAME_OVER
             pygame.mixer.music.stop()
-
-        elif self.hero.hearts == 0:
-            self.new()
-            self.hero.respawn()
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
@@ -236,10 +245,8 @@ class Game:
         elif self.stage == Game.START:
             self.display_message(self.screen, "Ready?!!!", "Press any key to start.")
         elif self.stage == Game.PAUSED:
-            pass
+            self.display_message(self.screen, "Game paused!", "press Esc to continue.")
         elif self.stage == Game.LEVEL_COMPLETED:
-            self.display_message(self.screen, "Level Complete", "Press any key to continue.")
-        elif self.stage == Game.VICTORY:
             self.display_message(self.screen, "You Win!", "Press 'R' to restart.")
         elif self.stage == Game.GAME_OVER:
             self.display_message(self.screen, "Game Over", "Press 'R' to restart.")

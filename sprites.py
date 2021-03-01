@@ -76,7 +76,6 @@ class Player(sprite.Sprite):
         self.level_completed = False
 
         self.score = 0
-        self.lives = 3
         self.hearts = 3
         self.max_hearts = 3
         self.invincibility = 0
@@ -105,6 +104,7 @@ class Player(sprite.Sprite):
         hit_list = pygame.sprite.spritecollide(self, food, True)
         if len(hit_list) > 0:
             self.hearts = self.max_hearts
+            play_sound(POWERUP_SOUND)
 
     def process_spikes(self, spikes):
         hit_list = pygame.sprite.spritecollide(self, spikes, False)
@@ -240,13 +240,7 @@ class Player(sprite.Sprite):
             self.score += coin.value
 
     def die(self):
-        self.lives -= 1
-        print(self.lives)
-
-        if self.lives > 0:
-            play_sound(DIE_SOUND)
-        else:
-            play_sound(GAMEOVER_SOUND)
+        play_sound(GAMEOVER_SOUND)
 
     def respawn(self):
         self.rect.x = self.start_x
