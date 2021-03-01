@@ -68,6 +68,7 @@ class Game:
         self.enemies = pygame.sprite.Group()  # Противники
         self.flag = pygame.sprite.Group()  # Флаг(цель уровня)
         self.spikes = pygame.sprite.Group()  # Шипы
+        self.food = pygame.sprite.Group()
 
         self.level_completed = False
 
@@ -96,6 +97,10 @@ class Game:
                     spikes = DangerPlatform(x, y)
                     self.all_sprites.add(spikes)
                     self.spikes.add(spikes)
+                elif col == "h":
+                    food = Food(x, y)
+                    self.all_sprites.add(food)
+                    self.food.add(food)
 
                 x += PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
             y += PLATFORM_HEIGHT  # то же самое и с высотой
@@ -196,7 +201,7 @@ class Game:
     def update(self):
         if self.stage == Game.PLAYING or self.stage == Game.SPLASH:
             self.hero.update(self.press_left, self.press_right, self.make_jump, self.platforms, self.enemies,
-                             self.coins, self.flag, self.make_hit, self.spikes)
+                             self.coins, self.flag, self.make_hit, self.spikes, self.food)
             self.coins.update()
             self.flag.update()
             self.enemies.update(self.platforms, self.hero, self.stage)
@@ -222,14 +227,6 @@ class Game:
             self.hero.respawn()
 
     def draw(self):
-        # now = pygame.time.get_ticks()
-        # if now - self.last_update >= FPS * 20:
-        #     self.last_update = now
-        #     self.cur_background += 1
-        # if self.cur_background >= len(self.background_images):
-        #     self.cur_background = 0
-        # self.image = self.background_images[self.cur_background]
-
         self.screen.blit(self.background, (0, 0))
         self.all_sprites.draw(self.screen)  # отображение
         self.display_stats(self.screen)

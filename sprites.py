@@ -101,6 +101,11 @@ class Player(sprite.Sprite):
         self.right = True
         self.attack = False
 
+    def process_food(self, food):
+        hit_list = pygame.sprite.spritecollide(self, food, True)
+        if len(hit_list) > 0:
+            self.hearts = self.max_hearts
+
     def process_spikes(self, spikes):
         hit_list = pygame.sprite.spritecollide(self, spikes, False)
         if len(hit_list) > 0 and self.invincibility == 0:
@@ -126,7 +131,7 @@ class Player(sprite.Sprite):
             self.level_completed = True
             play_sound(LEVELUP_SOUND)
 
-    def update(self, left, right, up, platforms, enemies, coins, flag, hit, spikes):
+    def update(self, left, right, up, platforms, enemies, coins, flag, hit, spikes, food):
         if up:
             self.rect.y += 1
 
@@ -199,6 +204,7 @@ class Player(sprite.Sprite):
         self.process_enemies(enemies)
 
         if self.hearts > 0:
+            self.process_food(food)
             self.process_coins(coins)
             self.process_flag(flag)
             self.process_spikes(spikes)
@@ -356,3 +362,14 @@ class Target(sprite.Sprite):  # цель уровня(флаг)
         if self.cur_frame >= len(self.current_images_group):
             self.cur_frame = 0
         self.image = self.current_images_group[self.cur_frame]
+
+
+class Food(sprite.Sprite):  # еда, восполняющая жизни
+    def __init__(self, x, y):
+        sprite.Sprite.__init__(self)
+
+        images = load_images(path='data/food', size=FOOD_SIZE)
+        self.image = random.choice(images)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y - ENEMY_HEIGHT // 2
